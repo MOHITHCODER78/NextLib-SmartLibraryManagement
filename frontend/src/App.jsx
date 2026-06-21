@@ -5,9 +5,13 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Books from './pages/Books';
 import StudentDashboard from './pages/StudentDashboard';
+import PortalHome from './pages/PortalHome';
+import MyShelf from './pages/MyShelf';
+import Fines from './pages/Fines';
 import AdminBooks from './pages/AdminBooks';
 import AdminTransactions from './pages/AdminTransactions';
 import AdminDashboard from './pages/AdminDashboard';
+import AdminAnalytics from './pages/AdminAnalytics';
 import Sidebar from './components/Sidebar';
 import Navbar from './components/Navbar';
 import ChatBot from './components/ChatBot';
@@ -19,7 +23,7 @@ class ErrorBoundary extends React.Component {
     this.state = { hasError: false };
   }
 
-  static getDerivedStateFromError(error) {
+  static getDerivedStateFromError() {
     return { hasError: true };
   }
 
@@ -63,10 +67,15 @@ const Layout = ({ children }) => (
 const Home = () => {
     const { user } = useAuth();
     if (user?.role === 'admin') return <Navigate to="/admin-dashboard" />;
-    return <Navigate to="/books" />;
+    return <Navigate to="/student-dashboard" />;
 };
 
-const ProtectedRoute = ({ children }) => {
+const AuthenticatedChatBot = () => {
+    const { user } = useAuth();
+    return user ? <ChatBot /> : null;
+};
+
+const ProtectedRoute = ({ children, roles }) => {
     const { user, loading } = useAuth();
     if (loading) return (
         <div className="flex flex-col items-center justify-center h-screen bg-slate-50">
@@ -75,6 +84,9 @@ const ProtectedRoute = ({ children }) => {
         </div>
     );
     if (!user) return <Navigate to="/login" />;
+    if (roles && !roles.includes(user.role)) {
+        return <Navigate to={user.role === 'admin' ? '/admin-dashboard' : '/student-dashboard'} />;
+    }
     return <Layout>{children}</Layout>;
 };
 
@@ -84,11 +96,18 @@ function App() {
             <ErrorBoundary>
                 <Router>
                     <Routes>
-                        <Route path="/login" element={<Login />} />
+                        <Route path="/portal" element={<PortalHome />} />
+                        <Route path="/login" element={<Navigate to="/student-login" />} />
+                        <Route path="/student-login" element={<Login portal="student" />} />
+                        <Route path="/admin-login" element={<Login portal="admin" />} />
                         <Route path="/register" element={<Register />} />
                         
                         <Route 
                             path="/" 
+                            element={<PortalHome />} 
+                        />
+                        <Route 
+                            path="/home" 
                             element={
                                 <ProtectedRoute>
                                     <Home />
@@ -98,7 +117,7 @@ function App() {
                         <Route 
                             path="/books" 
                             element={
-                                <ProtectedRoute>
+                                <ProtectedRoute roles={['student', 'admin']}>
                                     <Books />
                                 </ProtectedRoute>
                             } 
@@ -106,23 +125,31 @@ function App() {
                         <Route 
                             path="/student-dashboard" 
                             element={
-                                <ProtectedRoute>
+                                <ProtectedRoute roles={['student']}>
                                     <StudentDashboard />
                                 </ProtectedRoute>
                             } 
                         />
+                        <Route
+                            path="/my-shelf"
+                            element={
+                                <ProtectedRoute roles={['student']}>
+                                    <MyShelf />
+                                </ProtectedRoute>
+                            }
+                        />
                         <Route 
                         path="/fines" 
                         element={
-                            <ProtectedRoute>
-                                <StudentDashboard />
+                            <ProtectedRoute roles={['student']}>
+                                <Fines />
                             </ProtectedRoute>
                         } 
                     />
                     <Route 
                         path="/ebooks" 
                         element={
-                            <ProtectedRoute>
+                            <ProtectedRoute roles={['student']}>
                                 <Books />
                             </ProtectedRoute>
                         } 
@@ -130,7 +157,7 @@ function App() {
                     <Route 
                         path="/admin-books" 
                             element={
-                                <ProtectedRoute>
+                                <ProtectedRoute roles={['admin']}>
                                     <AdminBooks />
                                 </ProtectedRoute>
                             } 
@@ -138,7 +165,7 @@ function App() {
                         <Route 
                             path="/admin-transactions" 
                             element={
-                                <ProtectedRoute>
+                                <ProtectedRoute roles={['admin']}>
                                     <AdminTransactions />
                                 </ProtectedRoute>
                             } 
@@ -146,13 +173,21 @@ function App() {
                         <Route 
                             path="/admin-dashboard" 
                             element={
-                                <ProtectedRoute>
+                                <ProtectedRoute roles={['admin']}>
                                     <AdminDashboard />
                                 </ProtectedRoute>
                             } 
                         />
+                        <Route 
+                            path="/admin-analytics" 
+                            element={
+                                <ProtectedRoute roles={['admin']}>
+                                    <AdminAnalytics />
+                                </ProtectedRoute>
+                            } 
+                        />
                     </Routes>
-                    <ChatBot />
+                    <AuthenticatedChatBot />
                 </Router>
             </ErrorBoundary>
         </AuthProvider>

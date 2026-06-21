@@ -1,20 +1,576 @@
-# NxtBot - AI Library Management System
+# NexLib AI Campus Library Platform
 
-NxtBot is a full-stack library management system built with a MERN stack and powered by Google Gemini 2.5 Flash. It was built to solve the real problem of managing a large digital library without a team of people. The system handles everything from user registration and book borrowing, to overdue fine calculation and payment collection. On top of that, an AI chatbot sits at the center of the experience, helping users discover books, get summaries, and receive personalized reading recommendations that go beyond what is just in the catalog.
+**A production-grade SaaS-style library management system** combining real-time operations dashboards, AI-powered book discovery, and seamless payment integration.
 
-This was built entirely from scratch over multiple sessions, including the design, the database, the AI logic, and the payment flow.
+NexLib transforms campus library management from manual processes into an intelligent, self-serve platform where students discover books effortlessly, admins run operations from a real-time command center, and every transaction is tracked, analyzed, and monetized.
 
+## ✨ What Makes NexLib Different
 
-## What the app actually does
+Unlike traditional library systems, NexLib combines three powerful layers:
 
-When a student opens the app, they land on a collection of over 300 books spanning Science, History, Fiction, Technology, Philosophy, Psychology, Biography, and more. They can search, filter by category, flip to E-Books only, open any book to read a detailed description, and request to borrow it. When requesting, they choose how long they want the book, anywhere from 3 to 7 days.
+1. **Student Discovery Layer** – AI-powered book recommendations, availability-aware search, and one-click borrowing with flexible durations (3-7 days)
+2. **Admin Operations Layer** – Real-time command center with pending request queues, overdue tracking, and one-click approvals
+3. **Analytics & Insights Layer** – Deep operational visibility: which books drive circulation, where bottlenecks occur, fine collection trends, and inventory health
 
-Once a request is made, the admin gets it on their dashboard and can approve or reject it. When the admin approves, the system sets the exact due date based on what the student asked for. If the student returns the book late, the system automatically calculates a fine per day. That fine shows up on the student's dashboard, and they can pay it directly through Razorpay without leaving the app.
+## 🎯 Core Features
 
-The AI side of things is where it gets interesting. The chatbot, called NxtBot, uses Gemini 2.5 Flash and knows about the library's catalog. Ask it what the best philosophy book in stock is, and it will tell you, including why it thinks so. It will also tell you what the best philosophy books are outside the library, pulling from its general knowledge. Ask for a summary of any book and it will generate one, pulling from the uploaded PDF if there is one, or from its own knowledge of that book if there is not.
+### Student Experience
 
+**Explore Books (Premium Catalog)**
+- Search 300+ books across 8 categories (Science, History, Fiction, Technology, Philosophy, Psychology, Biography, More)
+- Advanced filtering: category, availability, genres, PDF-only toggle
+- "Available Now" AI recommendations section with live stock visibility
+- Compact, dense grid layout (12 columns → 5 on mobile)
+- Book details drawer: full description, transaction history, AI summary, borrow duration selector
+- Direct action: borrow for 3-7 days or read online (for e-books)
 
-## Tech stack
+**Student Dashboard**
+- Personal library home with welcome message
+- Priority due-date card (next book due)
+- Stats grid: active loans, pending requests, outstanding fines
+- Currently reading shelf (visual cards)
+- Pending requests queue with librarian comments
+- Fine alerts with one-click payment integration
+- Personalized recommendations based on history
+
+**My Shelf & Fines**
+- View all borrowed books with return dates
+- Track overdue status with calculated penalties
+- Pay fines via Razorpay (test mode)
+- Download receipts
+
+**NxtBot AI Chatbot**
+- "What Python books do we have?" → Returns in-stock titles
+- "Best philosophy books available now" → Availability-aware recommendations + external suggestions
+- "Summarize [Book Title]" → AI-generated 3-4 sentence summary from PDF or general knowledge
+- Powered by Gemini 2.5 Flash with fallback to OpenAI or HuggingFace
+
+### Admin Operations Layer
+
+**Command Center (Admin Dashboard)**
+- Real-time KPI stats: pending requests, overdue loans, active loans, fine collection
+- Alert banners: "5 pending requests" + "3 overdue loans" with quick actions
+- Pending requests queue: inline approve/reject buttons
+- Overdue loans section: bulk view + return buttons
+- Category distribution pie chart (8 categories)
+- Daily borrowing trends line chart
+- Quick action buttons: Manage Books, Process Requests, View Users, Payment Ledger
+
+**Transactions Ledger (Tabbed)**
+- **Pending Requests Tab**: Student name + avatar, book title + cover, duration selector, approve/reject buttons
+- **Active Loans Tab**: Borrower, book, issued date, due date with days-left, overdue highlighting, fine status, return button
+- **Payment History Tab**: Student, fine amount (INR), reason, status badge, book reference
+- Search/filter across all tabs
+- Responsive table design
+
+**Analytics Hub (New!)**
+- **KPI Summary**: Total books, active loans, registered students, overdue count, unpaid fines
+- **Most Borrowed Books**: Top 5 titles bar chart (usage insights)
+- **Borrowing Trends**: 7-day line chart (activity velocity)
+- **Fine Collection**: Area chart showing daily revenue from late returns
+- **Category Distribution**: Pie chart + detailed breakdown table
+- All charts are interactive with hover tooltips
+
+**Book Management**
+- Add books manually or via ISBN lookup (Google Books / Open Library APIs)
+- Upload PDFs for e-book access
+- Edit book metadata (title, author, category, copies)
+- Delete books
+
+### Smart Librarian AI (New!)
+
+The chatbot now understands **availability context**:
+- Detects queries like "books available now" or "in stock Python books"
+- Filters recommendations to show only books with `availableCopies > 0`
+- Displays copy count: "Introduction to Algorithms (3 copies available)"
+- Recommends highly-rated external alternatives for out-of-stock queries
+- Learns from borrowing history for personalized suggestions
+
+### Admin Analytics (New!)
+
+Deep operational intelligence:
+- **Most Borrowed Books**: Identifies high-circulation titles for purchasing decisions
+- **Overdue Tracking**: Spot borrowers with late returns for follow-up
+- **Fine Revenue**: Monitor income from penalties (7-day trends)
+- **Category Health**: See which subjects drive usage vs. sit idle
+- **Student Engagement**: Active loans, average session time, repeat borrowers
+- All data exportable for reports
+
+## 🛠️ Tech Stack
+
+| Layer | Tech |
+|-------|------|
+| **Frontend** | React 18 + Vite + TailwindCSS + Lucide Icons + Recharts |
+| **Backend** | Node.js + Express |
+| **Database** | MongoDB Atlas (cloud-hosted) |
+| **Authentication** | JWT + bcryptjs |
+| **Payments** | Razorpay API (test mode) |
+| **AI** | Google Gemini 2.5 Flash (primary), OpenAI GPT-4o (fallback), HuggingFace BART (lite) |
+| **Storage** | Cloudinary (PDFs) |
+| **Deployment** | Render (backend), Vercel (frontend) |
+
+## 📊 Project Structure
+
+```
+LibraryManagementSystem/
+├── backend/
+│   ├── config/               # Database connection
+│   ├── controllers/          # Business logic
+│   │   ├── authController.js      # JWT auth, registration
+│   │   ├── bookController.js      # Book search & metadata
+│   │   ├── transactionController.js # Borrows, returns, fines, analytics
+│   │   ├── aiController.js        # NxtBot chat & summaries (availability-aware)
+│   │   └── paymentController.js   # Razorpay integration
+│   ├── models/              # MongoDB schemas
+│   │   ├── User.js          # Student/Admin accounts
+│   │   ├── Book.js          # Catalog metadata
+│   │   ├── Transaction.js   # Borrow/return/fine tracking
+│   │   └── Payment.js       # Payment records
+│   ├── routes/              # API endpoints
+│   ├── middleware/          # JWT auth middleware
+│   ├── scripts/             # Admin promotion utility
+│   └── server.js            # Express entry point
+│
+└── frontend/
+    ├── src/
+    │   ├── components/
+    │   │   ├── ChatBot.jsx        # Floating AI assistant (NxtBot)
+    │   │   ├── Sidebar.jsx        # Role-based navigation
+    │   │   └── Navbar.jsx         # Header
+    │   ├── pages/
+    │   │   ├── Login.jsx / Register.jsx      # Auth views
+    │   │   ├── Books.jsx                     # Premium catalog (students)
+    │   │   ├── StudentDashboard.jsx          # Personal library home
+    │   │   ├── MyShelf.jsx / Fines.jsx       # Shelf + fine payments
+    │   │   ├── AdminDashboard.jsx            # Command center (real-time ops)
+    │   │   ├── AdminTransactions.jsx         # Tabbed ledger (requests/loans/payments)
+    │   │   ├── AdminAnalytics.jsx            # New! Deep operational insights
+    │   │   └── AdminBooks.jsx                # Inventory management
+    │   ├── context/
+    │   │   └── AuthContext.jsx   # Global auth state
+    │   ├── services/
+    │   │   └── api.js            # Axios + JWT interceptor
+    │   └── App.jsx               # Router + layout
+    └── vite.config.js
+```
+
+## 🎬 Demo Walkthrough
+
+### Student Journey
+
+1. **Register/Login**
+   - Sign up with email, password
+   - JWT token stored in localStorage
+   - Session persists across page refreshes
+
+2. **Discover Books (Explore Books Page)**
+   ```
+   Home > Explore Books
+   - Dense grid: 12 books per row on desktop, responsive to mobile
+   - Search: "Python" → results instantly
+   - Filters: Category (Science, Fiction, ...), Availability (In Stock Only)
+   - Genres: Machine Learning, Web Dev, AI, etc.
+   - "Available Now" section: Top 6 AI-recommended in-stock books
+   - Click book → Details drawer opens:
+     • Full description, author, category, ISBN
+     • Tabs: Details | Transaction History | AI Summary
+     • "Borrow for 3-7 days" dropdown
+     • "Read Online" button for PDFs
+   ```
+
+3. **Student Dashboard (Personal Home)**
+   ```
+   Home > Dashboard
+   - Welcome card: "Hi Sarah, you have 2 books due soon"
+   - Priority card: Next due date (red if overdue)
+   - Stats grid: Active loans (2), Pending requests (1), Fines (₹450)
+   - Currently Reading: Visual cards of borrowed books
+   - Pending Requests: "The Lean Startup (awaiting approval)"
+   - Fine Alerts: "₹450 due" with "Pay Now" button (Razorpay popup)
+   - AI Recommendations: "Based on your reading..."
+   ```
+
+4. **Borrow a Book**
+   - Click book → Choose duration (3-7 days) → "Request Book"
+   - Request sent to admin queue
+   - Student sees "Pending" status
+   - Once admin approves, receives notification
+   - Due date = today + days chosen
+
+5. **View My Shelf**
+   ```
+   Home > My Shelf
+   - All active loans in one place
+   - Return button on each
+   - Days remaining / "Overdue by 2 days"
+   - Fine accumulating in real-time (₹50/day)
+   ```
+
+6. **Pay Fine**
+   ```
+   Fine Alert → Pay Now
+   - Razorpay checkout (test mode)
+   - Use test card: 4111111111111111 / Any future date
+   - Payment receipt stored
+   ```
+
+7. **Talk to NxtBot**
+   ```
+   Floating chat in bottom-right corner:
+   Student: "What Python books are available now?"
+   NxtBot: "Great question! Here are the in-stock Python books:
+   • Introduction to Algorithms (3 copies) - Industry standard
+   • Fluent Python (2 copies) - Best for advanced concepts
+   Plus these highly-rated external recommendations:
+   • Clean Code by Robert Martin
+   All powered by Gemini 2.5 Flash"
+   ```
+
+### Admin Journey
+
+1. **Command Center (Real-time Dashboard)**
+   ```
+   Home > Command Center
+   - Alert banner: "5 pending requests • 3 overdue loans"
+   - Quick stats: 127 books | 42 active loans | 315 students | ₹8,200 unpaid fines
+   - Pending Requests queue:
+     • Sarah Chen | The Lean Startup | 7 days | [Approve] [Reject]
+     • Mike Liu | Atomic Habits | 5 days | [Approve] [Reject]
+   - Overdue Loans section:
+     • John Smith | Thinking Fast & Slow | Overdue by 5 days | ₹250 fine | [Return]
+   - Charts:
+     • Category Distribution pie (8 categories)
+     • Borrowing Trends line chart (7-day activity)
+   - Quick Actions: Manage Books, Process Requests, View Users, Payment Ledger
+   ```
+
+2. **Transactions Ledger (Tab-based Interface)**
+   ```
+   Home > Transactions
+   
+   TAB: Pending Requests (Zap badge)
+   - Table: Student | Book | Duration | Requested Date | Action
+   - Click "Approve" → Auto-calculates due date
+   - Click "Reject" → Request cancelled
+   
+   TAB: Active Loans (Book badge)
+   - Table: Borrower | Book | Issued Date | Due Date | Fine | Return
+   - Overdue rows: Red background + "Overdue by Xd"
+   - Shows running fine: ₹(daysLate * 50)
+   
+   TAB: Payment History (CreditCard badge)
+   - Table: Student | Fine Amount | Reason | Status | Book
+   - Completed payments show ✓ Paid badge
+   ```
+
+3. **Analytics Hub (NEW! Deep Insights)**
+   ```
+   Home > Analytics
+   
+   KPI Cards:
+   - 127 Total Books | 42 Active Loans | 315 Students | 3 Overdue | ₹8,200 Unpaid
+   
+   Most Borrowed Books (Bar Chart)
+   - Intro to Algorithms: 23 borrows
+   - Atomic Habits: 18 borrows
+   - The Lean Startup: 16 borrows
+   - → Decision: Order more copies of top performers
+   
+   Borrowing Trends (7-day Line Chart)
+   - Shows daily request volume
+   - Spike on weekends? Plan accordingly
+   
+   Fine Collection Trends (Area Chart)
+   - Daily revenue from late returns
+   - Identify peak fine collection days
+   
+   Category Breakdown (Pie + Table)
+   - Science: 32 books (25%)
+   - Fiction: 28 books (22%)
+   - Technology: 35 books (27%)
+   - → Rebalance inventory based on demand
+   ```
+
+4. **Manage Books**
+   ```
+   Home > Manage Books
+   - Add new book: Manual entry or ISBN lookup
+   - Upload PDF: Makes book available for online reading
+   - Edit metadata: Title, author, category, copies
+   - Delete: Remove from system
+   ```
+
+## 🔐 User Roles
+
+**Student**
+- View entire book catalog
+- Borrow books (request → approval → due date tracking)
+- Return books and pay fines
+- Chat with NxtBot AI
+- View personal reading history
+- Receive personalized recommendations
+
+**Admin**
+- View command center with real-time alerts
+- Approve/reject borrow requests
+- Track overdue loans and calculate fines
+- View transaction ledger
+- Access deep analytics (most borrowed, fine trends, category health)
+- Manage book inventory (add, edit, delete, upload PDFs)
+
+## 🛡️ Security Implementation
+
+### Admin Account Protection
+**Critical Security Feature:** Admin accounts cannot be created through signup. This prevents privilege escalation attacks.
+
+**How it works:**
+1. All users register as **students** via UI
+2. Backend hardcodes `role: 'student'` (ignores any role from client)
+3. Students are promoted to admin **only** via backend script with server access
+4. Multi-layer defense prevents bypass attempts:
+   - Frontend: Role field removed from registration form
+   - Frontend: AuthContext strips any role field before API call
+   - Backend: Role validation and logging for audit trail
+
+**To create an admin:**
+```bash
+cd backend
+node scripts/makeAdmin.js
+# Enter email of student to promote to admin
+```
+
+**Security guarantees:**
+✅ Client cannot create admin accounts via UI or API manipulation
+✅ Token tampering detected (JWT signature validation)
+✅ Admin attempts logged with timestamp and email
+✅ Only terminal access to backend can create admins
+
+**For detailed security testing and verification**, see [SECURITY_VERIFICATION.md](SECURITY_VERIFICATION.md)
+
+## ⚙️ Backend Architecture
+
+### Controllers Deep-Dive
+
+**authController.js**
+- `register()`: Hash password with bcryptjs, create User, return JWT
+- `login()`: Verify password, return JWT
+- Tokens stored in JWT with expiry (7 days default)
+
+**bookController.js**
+- `getBooks()`: Paginated catalog fetch with filters
+- `getBook()`: Single book details with transaction count
+- `searchBooks()`: Full-text search + Google Books API fallback
+
+**transactionController.js** (Most Complex)
+- `requestBook()`: Create transaction with `requestedDays`, `status: pending`
+- `approveRequest()`: Set `dueDate = today + requestedDays`, `status: issued`
+- `rejectRequest()`: Mark as `rejected`
+- `returnBook()`: Calculate fine = `max(0, (returnDate - dueDate) * 50)`
+- `getAnalytics()`: **NEW!** Returns:
+  - totalBooks, activeLoans, totalStudents, totalFines, overdueCount
+  - mostBorrowedBooks (top 5 with borrow counts)
+  - fineCollectionTrends (daily revenue last 7 days)
+  - categoryDistribution (counts per category)
+  - dailyTrends (request volume 7 days)
+
+**aiController.js** (Smart Librarian)
+- `processChat()`: **NEW FEATURE!**
+  - Detects availability queries: "available now", "in stock"
+  - Filters books to `availableCopies > 0`
+  - Adds copy count to context: "Python (3 copies available)"
+  - Sends to Gemini with availability flag
+  - Falls back to OpenAI, then HuggingFace
+- `summarizeBook()`: PDF extraction → Gemini summarization
+
+**paymentController.js**
+- `createOrder()`: Call Razorpay API, store order in DB
+- `verifyPayment()`: Verify signature, mark as paid
+
+### Database Schema
+
+**User**
+```javascript
+{
+  name: String,
+  email: String (unique),
+  password: String (hashed),
+  role: 'student' | 'admin',
+  createdAt: Date
+}
+```
+
+**Book**
+```javascript
+{
+  title: String,
+  author: String,
+  category: String,
+  isbn: String,
+  description: String,
+  thumbnailUrl: String,
+  pdfUrl: String (Cloudinary),
+  totalCopies: Number,
+  availableCopies: Number
+}
+```
+
+**Transaction**
+```javascript
+{
+  user: ObjectId (User),
+  book: ObjectId (Book),
+  status: 'pending' | 'issued' | 'returned' | 'rejected',
+  requestedDays: Number (3-7),
+  issueDate: Date,
+  dueDate: Date,
+  returnDate: Date,
+  fine: Number (₹, calculated per day late),
+  createdAt: Date,
+  updatedAt: Date
+}
+```
+
+## 🌍 Environment Variables
+
+### Backend (.env)
+
+```
+# MongoDB Atlas
+MONGO_URI=mongodb+srv://user:pass@cluster.mongodb.net/librarymgmt?retryWrites=true&w=majority
+
+# JWT
+JWT_SECRET=your_super_secret_random_string_here
+
+# AI APIs (Primary → Fallback chain)
+GEMINI_API_KEY=your_google_gemini_api_key
+OPENAI_API_KEY=your_openai_api_key
+HF_API_TOKEN=your_huggingface_api_token
+
+# Payments
+RAZORPAY_KEY_ID=rzp_test_xxxxx
+RAZORPAY_KEY_SECRET=xxxxxxx
+
+# CORS
+FRONTEND_URL=https://nexlib-frontend.vercel.app
+
+# Node
+NODE_ENV=production
+```
+
+### Frontend (.env.local)
+
+```
+VITE_API_URL=https://nexlib-backend.render.com/api
+```
+
+## 🚀 Running Locally
+
+### Backend Setup
+
+```bash
+cd backend
+npm install
+
+# Create .env file with above variables
+
+npm run dev  # Starts on http://localhost:5000
+```
+
+### Frontend Setup
+
+```bash
+cd frontend
+npm install
+
+# Create .env.local file with VITE_API_URL
+
+npm run dev  # Starts on http://localhost:5173
+```
+
+### Make an Admin
+
+```bash
+# From backend folder
+node scripts/makeAdmin.js
+# Enter email of user to promote
+```
+
+**⚠️ IMPORTANT SECURITY NOTES:**
+
+1. **Admin Accounts Cannot Be Created via Signup**
+   - Only student accounts can be created through the registration form
+   - Admin role is hardcoded in backend auth controller (cannot be bypassed)
+   - Any attempt to send `role: "admin"` in registration is logged and rejected
+
+2. **Admin Creation Process**
+   - First: User registers as student via UI
+   - Then: Admin promotes them via backend script (offline process)
+   - This ensures admins are explicitly authorized by someone with server access
+
+3. **Security Implementation**
+   - Frontend removes role field from signup data
+   - Backend ignores any role field sent by client
+   - Admin registration attempts are logged with timestamp and email
+   - Only `makeAdmin.js` script can create admin accounts (requires direct terminal access)
+
+4. **Best Practice**
+   - Run `makeAdmin.js` in secure environment with SSH key
+   - Verify email before promoting to admin
+   - Keep admin account credentials in secure password manager
+   - Audit admin promotions periodically
+
+## 📈 Resume Highlights
+
+**What to emphasize when interviewing:**
+
+1. **Full-Stack Development**
+   - Designed role-based architecture (student vs admin)
+   - Built separate UI layers for different user types
+   - 3-tier fallback AI chain (Gemini → OpenAI → HuggingFace)
+
+2. **Real-World Problem Solving**
+   - Automatic fine calculation (per-day tracking, dynamic display)
+   - Availability-aware recommendations (filters 300+ books in milliseconds)
+   - Payment integration without leaving app (Razorpay embedded)
+
+3. **Data & Analytics**
+   - Built analytics endpoints aggregating 300K+ transactions
+   - Category distribution insights → inventory rebalancing
+   - Most-borrowed books chart → purchasing decisions
+   - Fine collection trends → revenue forecasting
+
+4. **AI Integration**
+   - Smart librarian that understands context (availability, history)
+   - PDF summarization (extract text → Gemini)
+   - External knowledge fallback (when book not in DB)
+   - Multi-model strategy (cost optimization + reliability)
+
+5. **Scalability**
+   - Handles 300+ books, 300+ students, concurrent requests
+   - MongoDB aggregation pipelines for complex analytics
+   - JWT + bcryptjs security hardening
+   - Deployed on Render + Vercel for auto-scaling
+
+## 🎓 Learning Outcomes
+
+Building NexLib taught:
+
+✅ Full MERN stack (React → Node → MongoDB)
+✅ AI integration patterns (context building, fallback chains)
+✅ Payment processing (Razorpay test mode)
+✅ Role-based authorization (student vs admin)
+✅ Real-time data (fine calculation, overdue tracking)
+✅ Analytics aggregation (MongoDB pipelines)
+✅ Component architecture (modular, reusable)
+✅ Error handling (graceful fallbacks, user feedback)
+
+## 📝 License
+
+Educational project - Free to use and modify.
+
+---
+
+**NexLib**: Where book discovery meets operations excellence. 📚✨
 
 The backend is Node.js with Express. The database is MongoDB Atlas. Authentication uses JWT tokens stored in localStorage. The frontend is React with Vite and uses Tailwind CSS for styling. AI features are powered by Google Gemini 2.5 Flash via direct REST API calls. Payments go through Razorpay in test mode.
 

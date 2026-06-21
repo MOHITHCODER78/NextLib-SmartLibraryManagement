@@ -1,0 +1,8 @@
+
+> backend@1.0.0 start
+> node server.js
+
+◇ injected env (12) from .env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+OpenAI Key Loaded: Yes (starts with sk-proj...)
+Server running in development mode on port 5000
+MongoDB Connected: ac-mzri7fc-shard-00-01.ycxrolh.mongodb.net

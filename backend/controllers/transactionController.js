@@ -189,6 +189,57 @@ exports.getAnalytics = async (req, res) => {
             { $limit: 7 }
         ]);
 
+        // Get most borrowed books (top 5)
+        const mostBorrowedBooks = await Transaction.aggregate([
+            {
+                $group: {
+                    _id: '$book',
+                    borrowCount: { $sum: 1 }
+                }
+            },
+            { $sort: { borrowCount: -1 } },
+            { $limit: 5 },
+            {
+                $lookup: {
+                    from: 'books',
+                    localField: '_id',
+                    foreignField: '_id',
+                    as: 'bookDetails'
+                }
+            },
+            { $unwind: '$bookDetails' }
+        ]);
+
+        const mostBorrowedFormatted = mostBorrowedBooks.map(b => ({
+            title: b.bookDetails.title,
+            borrows: b.borrowCount
+        }));
+
+        // Get overdue count
+        const now = new Date();
+        const overdueLoans = await Transaction.countDocuments({
+            status: 'issued',
+            dueDate: { $lt: now }
+        });
+
+        // Get fine collection trends (last 7 days)
+        const fineCollectionTrends = await Transaction.aggregate([
+            {
+                $match: {
+                    status: 'returned',
+                    fine: { $gt: 0 },
+                    updatedAt: { $gte: new Date(new Date().setDate(new Date().getDate() - 7)) }
+                }
+            },
+            {
+                $group: {
+                    _id: { $dateToString: { format: "%Y-%m-%d", date: "$updatedAt" } },
+                    totalFineCollected: { $sum: '$fine' }
+                }
+            },
+            { $sort: { "_id": 1 } }
+        ]);
+
         res.status(200).json({
             success: true,
             data: {
@@ -196,8 +247,11 @@ exports.getAnalytics = async (req, res) => {
                 activeLoans,
                 totalStudents,
                 totalFines,
+                overdueLoans,
                 categoryDistribution,
-                dailyTrends
+                dailyTrends,
+                mostBorrowedBooks: mostBorrowedFormatted,
+                fineCollectionTrends
             }
         });
     } catch (err) {

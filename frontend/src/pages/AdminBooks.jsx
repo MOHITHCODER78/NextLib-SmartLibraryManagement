@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import api from '../services/api';
 import { 
   Plus, 
@@ -24,6 +24,7 @@ const AdminBooks = () => {
     const [isSearchingISBN, setIsSearchingISBN] = useState(false);
     const [message, setMessage] = useState({ type: '', text: '' });
     const [uploading, setUploading] = useState(false);
+    const [editingBook, setEditingBook] = useState(null);
 
     const [formData, setFormData] = useState({
         title: '',
@@ -36,9 +37,17 @@ const AdminBooks = () => {
         pdfUrl: ''
     });
 
-    useEffect(() => {
-        fetchBooks();
-    }, []);
+    const emptyForm = {
+        title: '',
+        author: '',
+        isbn: '',
+        category: 'Fiction',
+        totalCopies: 1,
+        availableCopies: 1,
+        description: '',
+        thumbnail: '',
+        pdfUrl: ''
+    };
 
     const fetchBooks = async () => {
         try {
@@ -50,6 +59,11 @@ const AdminBooks = () => {
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        fetchBooks();
+    }, []);
 
     const handleFileUpload = async (e) => {
         const file = e.target.files[0];
@@ -65,7 +79,7 @@ const AdminBooks = () => {
             });
             setFormData({ ...formData, pdfUrl: res.data.url });
             setMessage({ type: 'success', text: 'PDF attached to book record!' });
-        } catch (err) {
+        } catch {
             setMessage({ type: 'error', text: 'Failed to upload PDF' });
         } finally {
             setUploading(false);
@@ -85,26 +99,63 @@ const AdminBooks = () => {
                 pdfUrl: formData.pdfUrl
             });
             setMessage({ type: 'success', text: 'Global records found!' });
-        } catch (err) {
+        } catch {
             setMessage({ type: 'error', text: 'ISBN not found in global database' });
         } finally {
             setIsSearchingISBN(false);
         }
     };
 
+    const openCreateModal = () => {
+        setEditingBook(null);
+        setFormData(emptyForm);
+        setMessage({ type: '', text: '' });
+        setIsModalOpen(true);
+    };
+
+    const openEditModal = (book) => {
+        setEditingBook(book);
+        setFormData({
+            title: book.title || '',
+            author: book.author || '',
+            isbn: book.isbn || '',
+            category: book.category || 'Fiction',
+            totalCopies: book.totalCopies || 1,
+            availableCopies: book.availableCopies ?? book.totalCopies ?? 1,
+            description: book.description || '',
+            thumbnail: book.thumbnail || '',
+            pdfUrl: book.pdfUrl || ''
+        });
+        setMessage({ type: '', text: '' });
+        setIsModalOpen(true);
+    };
+
+    const closeModal = () => {
+        setIsModalOpen(false);
+        setEditingBook(null);
+        setFormData(emptyForm);
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            await api.post('/books', {
+            const payload = {
                 ...formData,
-                availableCopies: formData.totalCopies
-            });
-            setIsModalOpen(false);
+                totalCopies: Number(formData.totalCopies),
+                availableCopies: Number(editingBook ? formData.availableCopies : formData.totalCopies)
+            };
+
+            if (editingBook) {
+                await api.put(`/books/${editingBook._id}`, payload);
+            } else {
+                await api.post('/books', payload);
+            }
+
+            closeModal();
             fetchBooks();
-            setFormData({ title: '', author: '', isbn: '', category: 'Fiction', totalCopies: 1, description: '', thumbnail: '', pdfUrl: '' });
-            setMessage({ type: 'success', text: 'Book added to library catalog' });
+            setMessage({ type: 'success', text: editingBook ? 'Book record updated' : 'Book added to library catalog' });
         } catch (err) {
-            setMessage({ type: 'error', text: err.response?.data?.message || 'Error adding book' });
+            setMessage({ type: 'error', text: err.response?.data?.message || 'Error saving book' });
         }
     };
 
@@ -113,7 +164,7 @@ const AdminBooks = () => {
         try {
             await api.delete(`/books/${id}`);
             fetchBooks();
-        } catch (err) {
+        } catch {
             alert('Error deleting book');
         }
     };
@@ -134,13 +185,20 @@ const AdminBooks = () => {
                     <p className="text-slate-500 mt-1 font-medium">Manage the university's physical and digital library assets.</p>
                 </div>
                 <button 
-                    onClick={() => setIsModalOpen(true)}
+                    onClick={openCreateModal}
                     className="bg-primary text-white px-6 py-3 rounded-2xl font-bold shadow-lg shadow-primary/20 hover:bg-primary-dark transition-all flex items-center gap-2"
                 >
                     <Plus className="w-5 h-5" />
                     Ingest New Book
                 </button>
             </div>
+
+            {message.text && !isModalOpen && (
+                <div className={`p-4 rounded-2xl text-sm font-bold flex items-center gap-2 ${message.type === 'success' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-rose-50 text-rose-600 border border-rose-100'}`}>
+                    {message.type === 'success' ? <CheckCircle className="w-4 h-4" /> : <X className="w-4 h-4" />}
+                    {message.text}
+                </div>
+            )}
 
             {/* Inventory Table */}
             <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
@@ -199,7 +257,11 @@ const AdminBooks = () => {
                                     </td>
                                     <td className="px-6 py-5 text-right">
                                         <div className="flex items-center justify-end gap-2">
-                                            <button className="p-2 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-all">
+                                            <button
+                                                onClick={() => openEditModal(book)}
+                                                className="p-2 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-all"
+                                                title="Edit book"
+                                            >
                                                 <Edit2 className="w-4 h-4" />
                                             </button>
                                             <button 
@@ -223,15 +285,22 @@ const AdminBooks = () => {
                     <div className="bg-white rounded-[32px] w-full max-w-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
                         <div className="px-8 py-6 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
                             <div>
-                                <h3 className="font-bold text-slate-900">Ingest New Resource</h3>
-                                <p className="text-xs text-slate-500 font-medium">Add physical or digital assets to the library.</p>
+                                <h3 className="font-bold text-slate-900">{editingBook ? 'Edit Resource' : 'Ingest New Resource'}</h3>
+                                <p className="text-xs text-slate-500 font-medium">{editingBook ? 'Update metadata, inventory, and digital access.' : 'Add physical or digital assets to the library.'}</p>
                             </div>
-                            <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-900 transition-colors">
+                            <button onClick={closeModal} className="text-slate-400 hover:text-slate-900 transition-colors">
                                 <X className="w-6 h-6" />
                             </button>
                         </div>
 
                         <form onSubmit={handleSubmit} className="p-8">
+                            {message.text && (
+                                <div className={`mb-6 p-4 rounded-xl text-sm font-bold flex items-center gap-2 ${message.type === 'success' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
+                                    {message.type === 'success' ? <CheckCircle className="w-4 h-4" /> : <X className="w-4 h-4" />}
+                                    {message.text}
+                                </div>
+                            )}
+
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                                 <div className="md:col-span-2">
                                     <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2">Global ISBN Search</label>
@@ -322,6 +391,46 @@ const AdminBooks = () => {
                                     </div>
                                 </div>
 
+                                {editingBook && (
+                                    <div>
+                                        <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2">Available Copies</label>
+                                        <div className="relative">
+                                            <Layers className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                max={formData.totalCopies}
+                                                required
+                                                className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all text-sm"
+                                                value={formData.availableCopies}
+                                                onChange={(e) => setFormData({...formData, availableCopies: parseInt(e.target.value)})}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="md:col-span-2">
+                                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2">Cover Image URL</label>
+                                    <input
+                                        type="url"
+                                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all text-sm"
+                                        value={formData.thumbnail}
+                                        onChange={(e) => setFormData({...formData, thumbnail: e.target.value})}
+                                        placeholder="https://..."
+                                    />
+                                </div>
+
+                                <div className="md:col-span-2">
+                                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2">Description</label>
+                                    <textarea
+                                        rows="4"
+                                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all text-sm resize-none"
+                                        value={formData.description}
+                                        onChange={(e) => setFormData({...formData, description: e.target.value})}
+                                        placeholder="Add a short catalog description..."
+                                    />
+                                </div>
+
                                 <div className="md:col-span-2">
                                     <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2">Digital Copy (PDF)</label>
                                     <div className="flex items-center gap-4">
@@ -345,7 +454,7 @@ const AdminBooks = () => {
                                 className="w-full bg-primary text-white py-4 rounded-2xl font-bold shadow-xl shadow-primary/20 hover:bg-primary-dark transition-all flex items-center justify-center gap-2"
                             >
                                 <Upload className="w-5 h-5" />
-                                Commit to Database
+                                {editingBook ? 'Update Book Record' : 'Commit to Database'}
                             </button>
                         </form>
                     </div>

@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import api from '../services/api';
-import { MessageSquare, X, Send, Bot, User, Loader2 } from 'lucide-react';
+import { MessageSquare, X, Send, Bot, Loader2 } from 'lucide-react';
 
 const ChatBot = () => {
     const [isOpen, setIsOpen] = useState(false);
@@ -32,7 +32,7 @@ const ChatBot = () => {
             const res = await api.post('/ai/chat', { message: input });
             const botMsg = { role: 'bot', text: res.data.message };
             setMessages(prev => [...prev, botMsg]);
-        } catch (err) {
+        } catch {
             setMessages(prev => [...prev, { role: 'bot', text: 'Sorry, I am having trouble connecting right now.' }]);
         } finally {
             setLoading(false);
@@ -63,7 +63,7 @@ const ChatBot = () => {
                             </div>
                             <div>
                                 <h3 className="text-white font-bold text-sm">NxtBot AI Assistant</h3>
-                                <p className="text-slate-400 text-[10px] uppercase font-bold tracking-widest">Powered by GPT-4o</p>
+                                <p className="text-slate-400 text-[10px] uppercase font-bold tracking-widest">Powered by Gemini 2.5 Flash</p>
                             </div>
                         </div>
                         <button onClick={() => setIsOpen(false)} className="text-slate-400 hover:text-white">

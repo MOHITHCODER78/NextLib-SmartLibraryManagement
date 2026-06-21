@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { UserPlus, Mail, Lock, User, AlertCircle, Loader2 } from 'lucide-react';
@@ -7,8 +7,8 @@ const Register = () => {
     const [formData, setFormData] = useState({
         name: '',
         email: '',
-        password: '',
-        role: 'student'
+        password: ''
+        // SECURITY: Role field intentionally omitted - students only via signup, admins only via backend script
     });
     const [error, setError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);

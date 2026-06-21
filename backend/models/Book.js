@@ -33,6 +33,8 @@ const bookSchema = new mongoose.Schema({
     },
     googleBookId: String,
     pdfUrl: String,
+    pdfBatch: { type: Number },   // numeric batch identifier (optional)
+    sourceUrl: { type: String }, // original remote PDF URL (for audit)
     createdAt: {
         type: Date,
         default: Date.now

@@ -3,7 +3,7 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const Book = require('../models/Book');
 const User = require('../models/User');
 const Transaction = require('../models/Transaction');
-const pdf = require('pdf-parse');
+const { PDFParse } = require('pdf-parse');
 const axios = require('axios');
 
 const openai = new OpenAI({
@@ -15,6 +15,11 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 // Helper: Gemini Chat (Direct REST API)
 const chatWithGemini = async (message, context) => {
     try {
+        let availabilityNote = '';
+        if (context.isAvailabilityQuery) {
+            availabilityNote = '\n\nIMPORTANT: The user is asking for AVAILABLE books ONLY. All "Relevant Books Found" are books that are currently in stock (availableCopies > 0). Prioritize these in your recommendations and mention their availability status.';
+        }
+
         const prompt = `You are NxtBot, an advanced AI library assistant for NexLib.
         
         CONTEXT DATA:
@@ -30,7 +35,7 @@ const chatWithGemini = async (message, context) => {
         2. Analyze the "Relevant Books Found" list and give your expert opinion on which ones are the best, explaining why they are considered industry standards or masterpieces.
         3. ALWAYS recommend 1 or 2 incredibly highly-rated books from the OUTSIDE WORLD (your external knowledge) that are relevant to their query, even if they aren't in our library yet. Let the user know these are external recommendations.
         4. Be conversational, engaging, and format your response clearly (use bullet points if needed).
-        5. Mention you are powered by Gemini 2.5 Flash.`;
+        5. Mention you are powered by Gemini 2.5 Flash.${availabilityNote}`;
 
         const response = await axios.post(
             `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
@@ -104,10 +109,26 @@ exports.summarizeBook = async (req, res) => {
 
         if (book.pdfUrl) {
             try {
-                // PDF is stored on Cloudinary, fetch it via HTTP
-                const pdfResponse = await axios.get(book.pdfUrl, { responseType: 'arraybuffer' });
-                const pdfData = await pdf(Buffer.from(pdfResponse.data));
-                textToSummarize = pdfData.text.substring(0, 15000);
+                let pdfText = '';
+                if (book.pdfUrl.startsWith('/uploads/')) {
+                    const path = require('path');
+                    const fs = require('fs');
+                    const localPath = path.join(path.dirname(__dirname), book.pdfUrl);
+                    const pdfBuffer = fs.readFileSync(localPath);
+                    const parser = new PDFParse({ data: pdfBuffer });
+                    const result = await parser.getText();
+                    await parser.destroy();
+                    pdfText = result.text || '';
+                } else {
+                    // PDF is stored on Cloudinary — use its URL directly
+                    const parser = new PDFParse({ url: book.pdfUrl });
+                    const result = await parser.getText();
+                    await parser.destroy();
+                    pdfText = result.text || '';
+                }
+                if (pdfText.length > 50) {
+                    textToSummarize = pdfText.substring(0, 15000);
+                }
             } catch (pdfErr) {
                 console.error('PDF Fetch/Extraction Failed:', pdfErr.message);
             }
@@ -182,17 +203,35 @@ exports.processChat = async (req, res) => {
         const user = req.user;
 
         const searchTerms = message.split(' ').filter(word => word.length > 3);
+        const messageLower = message.toLowerCase();
+        
+        // Smart Librarian AI: Detect availability filters
+        const isAvailabilityQuery = messageLower.includes('available') || 
+                                    messageLower.includes('in stock') || 
+                                    messageLower.includes('available now') ||
+                                    messageLower.includes('in stock now');
+        
         let relevantBooks = [];
         let relevantUsers = [];
+        let availabilityFilter = {};
+
+        if (isAvailabilityQuery) {
+            availabilityFilter = { availableCopies: { $gt: 0 } };
+        }
 
         if (searchTerms.length > 0) {
             relevantBooks = await Book.find({
-                $or: [
-                    { title: { $regex: searchTerms.join('|'), $options: 'i' } },
-                    { author: { $regex: searchTerms.join('|'), $options: 'i' } },
-                    { category: { $regex: searchTerms.join('|'), $options: 'i' } }
+                $and: [
+                    {
+                        $or: [
+                            { title: { $regex: searchTerms.join('|'), $options: 'i' } },
+                            { author: { $regex: searchTerms.join('|'), $options: 'i' } },
+                            { category: { $regex: searchTerms.join('|'), $options: 'i' } }
+                        ]
+                    },
+                    availabilityFilter
                 ]
-            }).select('title author category description').limit(5);
+            }).select('title author category description availableCopies').limit(8);
 
             if (user.role === 'admin' && (message.toLowerCase().includes('user') || message.toLowerCase().includes('member'))) {
                 relevantUsers = await User.find({
@@ -209,8 +248,9 @@ exports.processChat = async (req, res) => {
         const context = {
             currentUser: { name: user.name, role: user.role },
             myIssuedBooks: myTransactions.map(t => `${t.book.title} (Due: ${new Date(t.dueDate).toLocaleDateString()})`),
-            foundBooks: relevantBooks.map(b => `${b.title} by ${b.author} [Category: ${b.category}]`),
-            foundUsers: relevantUsers.map(u => `${u.name} (${u.email}) - Role: ${u.role}`)
+            foundBooks: relevantBooks.map(b => `${b.title} by ${b.author} [Category: ${b.category}] - ${b.availableCopies} copies available`),
+            foundUsers: relevantUsers.map(u => `${u.name} (${u.email}) - Role: ${u.role}`),
+            isAvailabilityQuery: isAvailabilityQuery
         };
 
         // 1. Try Gemini (Primary)

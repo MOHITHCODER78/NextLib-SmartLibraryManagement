@@ -2,6 +2,7 @@ const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const connectDB = require('./config/db');
+const path = require('path');
 
 // Load env vars
 dotenv.config();
@@ -12,8 +13,6 @@ connectDB();
 
 const app = express();
 
-const path = require('path');
-
 // Body parser
 app.use(express.json());
 
@@ -22,6 +21,8 @@ app.use(cors({
     origin: [
         'http://localhost:5173',
         'http://localhost:5174',
+        'http://127.0.0.1:5173',
+        'http://127.0.0.1:5174',
         'https://library-management-system-byww-pt141u8ys.vercel.app',
         process.env.FRONTEND_URL
     ].filter(Boolean),

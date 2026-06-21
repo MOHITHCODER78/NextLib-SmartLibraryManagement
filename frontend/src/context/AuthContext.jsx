@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
+import { createContext, useState, useEffect, useContext } from 'react';
 import api from '../services/api';
 
 const AuthContext = createContext();
@@ -14,7 +14,7 @@ export const AuthProvider = ({ children }) => {
                 try {
                     const res = await api.get('/auth/me');
                     setUser(res.data.data);
-                } catch (err) {
+                } catch {
                     localStorage.removeItem('token');
                     setUser(null);
                 }
@@ -32,7 +32,10 @@ export const AuthProvider = ({ children }) => {
     };
 
     const register = async (userData) => {
-        const res = await api.post('/auth/register', userData);
+        // SECURITY: Remove any role field to prevent admin account bypass attempts
+        // eslint-disable-next-line no-unused-vars
+        const { role, ...safeData } = userData;
+        const res = await api.post('/auth/register', safeData);
         localStorage.setItem('token', res.data.token);
         setUser(res.data.user);
         return res.data;
@@ -50,4 +53,5 @@ export const AuthProvider = ({ children }) => {
     );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => useContext(AuthContext);
