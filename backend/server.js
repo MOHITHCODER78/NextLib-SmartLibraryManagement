@@ -17,17 +17,42 @@ const app = express();
 app.use(express.json());
 
 // Enable CORS
-const frontendUrl = process.env.FRONTEND_URL ? process.env.FRONTEND_URL.replace(/\/$/, '') : null;
+const rawFrontendUrl = process.env.FRONTEND_URL || '';
+const frontendUrl = rawFrontendUrl.replace(/['"]/g, '').trim().replace(/\/$/, '');
+
+const allowedOrigins = [
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'http://127.0.0.1:5173',
+    'http://127.0.0.1:5174',
+    'https://library-management-system-byww-pt141u8ys.vercel.app'
+];
+
+if (frontendUrl) {
+    allowedOrigins.push(frontendUrl);
+}
 
 app.use(cors({
-    origin: [
-        'http://localhost:5173',
-        'http://localhost:5174',
-        'http://127.0.0.1:5173',
-        'http://127.0.0.1:5174',
-        'https://library-management-system-byww-pt141u8ys.vercel.app',
-        frontendUrl
-    ].filter(Boolean),
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps, curl, or postman)
+        if (!origin) return callback(null, true);
+
+        const normalizedOrigin = origin.trim().replace(/\/$/, '').toLowerCase();
+        const isAllowed = allowedOrigins.some(allowed => {
+            const normalizedAllowed = allowed.trim().replace(/\/$/, '').toLowerCase();
+            return normalizedAllowed === normalizedOrigin;
+        });
+
+        if (isAllowed) {
+            callback(null, true);
+        } else {
+            console.warn(`⚠️ CORS blocked for origin: "${origin}". Allowed origins: ${allowedOrigins.join(', ')}`);
+            // We pass null to allow the request to reach the server but fail CORS on browser
+            // Or we can return an error. Let's return true (allow it in cors library) but log it,
+            // or pass error. Standard is to pass error or false. Let's pass callback(null, false) so it returns CORS error headers correctly.
+            callback(null, false);
+        }
+    },
     credentials: true
 }));
 
