@@ -7,6 +7,7 @@ const path = require('path');
 // Load env vars
 dotenv.config();
 console.log('OpenAI Key Loaded:', process.env.OPENAI_API_KEY ? 'Yes (starts with ' + process.env.OPENAI_API_KEY.substring(0, 7) + '...)' : 'No');
+console.log('FRONTEND_URL Loaded:', process.env.FRONTEND_URL || 'Not Set');
 
 // Connect to database
 connectDB();
