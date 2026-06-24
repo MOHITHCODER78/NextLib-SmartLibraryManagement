@@ -17,6 +17,8 @@ const app = express();
 app.use(express.json());
 
 // Enable CORS
+const frontendUrl = process.env.FRONTEND_URL ? process.env.FRONTEND_URL.replace(/\/$/, '') : null;
+
 app.use(cors({
     origin: [
         'http://localhost:5173',
@@ -24,7 +26,7 @@ app.use(cors({
         'http://127.0.0.1:5173',
         'http://127.0.0.1:5174',
         'https://library-management-system-byww-pt141u8ys.vercel.app',
-        process.env.FRONTEND_URL
+        frontendUrl
     ].filter(Boolean),
     credentials: true
 }));
