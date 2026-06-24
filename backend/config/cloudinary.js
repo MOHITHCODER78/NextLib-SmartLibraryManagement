@@ -1,19 +1,2 @@
-const cloudinary = require('cloudinary').v2;
-const { CloudinaryStorage } = require('multer-storage-cloudinary');
-
-cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET
-});
-
-const storage = new CloudinaryStorage({
-    cloudinary,
-    params: async (req, file) => ({
-        folder: 'nxtbot-library/pdfs',
-        resource_type: 'raw',
-        public_id: `${Date.now()}_${file.originalname.replace(/\s+/g, '_').replace('.pdf', '')}`
-    })
-});
-
-module.exports = { cloudinary, storage };
+// Deprecated: Cloudinary is removed. Local file storage is used instead.
+module.exports = {};

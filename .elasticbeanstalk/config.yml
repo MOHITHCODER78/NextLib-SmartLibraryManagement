@@ -1,0 +1,12 @@
+# .elasticbeanstalk/config.yml
+
+branch-defaults:
+  default:
+    environment: my-library-env
+global:
+  application_name: nextlib-smartlibrary
+  default_platform: Docker
+  default_region: us-east-1
+  profile: default
+  sc:
+    repository: .

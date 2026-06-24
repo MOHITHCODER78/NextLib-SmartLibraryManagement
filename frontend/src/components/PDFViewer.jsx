@@ -4,13 +4,15 @@ const PDFViewer = ({ isOpen, pdfUrl, bookTitle, onClose }) => {
   if (!isOpen || !pdfUrl) return null;
 
   // Convert PDF URL to proxied viewable format
-  const getViewableUrl = (url) => {
+  const getViewableUrl = (url, download = false) => {
     if (!url) return '';
     const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-    return `${apiUrl}/upload/pdf-proxy?url=${encodeURIComponent(url)}`;
+    const baseUrl = `${apiUrl}/upload/pdf-proxy?url=${encodeURIComponent(url)}`;
+    return download ? `${baseUrl}&download=true` : baseUrl;
   };
 
   const viewableUrl = getViewableUrl(pdfUrl);
+  const downloadUrl = getViewableUrl(pdfUrl, true);
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
@@ -23,7 +25,7 @@ const PDFViewer = ({ isOpen, pdfUrl, bookTitle, onClose }) => {
           </div>
           <div className="flex items-center gap-3">
             <a
-              href={viewableUrl}
+              href={downloadUrl}
               download
               target="_blank"
               rel="noopener noreferrer"
